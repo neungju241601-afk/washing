@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기숙사 세탁기 예약 시스템</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧺 기숙사 세탁기 예약 시스템</h1>
+            <p class="subtitle">세탁기 현황을 실시간으로 확인하고 예약하세요</p>
+        </header>
+
+        <!-- 사용자 이름 입력 섹션 -->
+        <div class="user-section">
+            <label for="userName">사용자 이름:</label>
+            <input type="text" id="userName" placeholder="이름을 입력하세요" maxlength="20">
+            <button onclick="setUserName()">확인</button>
+            <span id="currentUser" class="current-user"></span>
+        </div>
+
+        <!-- 알림 섹션 -->
+        <div id="notificationSection" class="notification-section" style="display: none;">
+            <h3>🔔 알림</h3>
+            <div id="notifications"></div>
+            <button onclick="clearNotifications()" class="btn-clear">알림 삭제</button>
+        </div>
+
+        <!-- 세탁기 현황 섹션 -->
+        <div class="status-section">
+            <h2>세탁기 현황</h2>
+            <div class="summary">
+                <span>전체: <strong id="totalMachines">-</strong>대</span>
+                <span>사용 가능: <strong id="availableCount" class="status-available">-</strong>대</span>
+                <span>사용 중: <strong id="inUseCount" class="status-in-use">-</strong>대</span>
+                <span>완료: <strong id="completedCount" class="status-completed">-</strong>대</span>
+            </div>
+            <div id="machinesContainer" class="machines-container">
+                <!-- 세탁기 카드들이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+
+        <!-- 예약 대기 목록 -->
+        <div id="reservationSection" class="reservation-section" style="display: none;">
+            <h2>대기 예약 목록</h2>
+            <div id="reservationsContainer"></div>
+        </div>
+
+        <!-- 세탁 시작 섹션 -->
+        <div class="action-section">
+            <h2>세탁 시작</h2>
+            <div class="form-group">
+                <label for="duration">세탁 시간 (분):</label>
+                <input type="number" id="duration" value="30" min="1" max="120">
+            </div>
+            <button onclick="startWashing()" class="btn-primary">세탁 시작 / 예약하기</button>
+        </div>
+
+        <!-- 메시지 표시 영역 -->
+        <div id="messageArea" class="message-area"></div>
+    </div>
+
+    <script>
+        let currentUserName = '';
+        let statusUpdateInterval = null;
+
+        // 사용자 이름 설정
+        function setUserName() {
+            const input = document.getElementById('userName');
+            const name = input.value.trim();
+            if (name) {
+                currentUserName = name;
+                document.getElementById('currentUser').textContent = `현재 사용자: ${name}`;
+                input.value = '';
+                loadNotifications();
+            } else {
+                showMessage('이름을 입력해주세요.', 'error');
+            }
+        }
+
+        // Enter 키로 사용자 이름 설정
+        document.getElementById('userName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                setUserName();
+            }
+        });
+
+        // 세탁기 상태 로드
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // 요약 정보 업데이트
+                document.getElementById('totalMachines').textContent = data.total_machines;
+                document.getElementById('availableCount').textContent = data.available_count;
+                document.getElementById('inUseCount').textContent = data.in_use_count;
+                document.getElementById('completedCount').textContent = data.completed_count;
+
+                // 세탁기 카드 생성
+                const container = document.getElementById('machinesContainer');
+                container.innerHTML = '';
+                
+                data.machines.forEach(machine => {
+                    const card = createMachineCard(machine);
+                    container.appendChild(card);
+                });
+
+                // 예약 목록 표시
+                if (data.reservations && data.reservations.length > 0) {
+                    document.getElementById('reservationSection').style.display = 'block';
+                    const resContainer = document.getElementById('reservationsContainer');
+                    resContainer.innerHTML = '';
+                    data.reservations.forEach((res, index) => {
+                        const resDiv = document.createElement('div');
+                        resDiv.className = 'reservation-item';
+                        resDiv.innerHTML = `
+                            <strong>${index + 1}번째 대기:</strong> ${res.user_name}
+                            <small>(${new Date(res.reservation_time).toLocaleTimeString()})</small>
+                        `;
+                        resContainer.appendChild(resDiv);
+                    });
+                } else {
+                    document.getElementById('reservationSection').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('상태 로드 오류:', error);
+            }
+        }
+
+        // 세탁기 카드 생성
+        function createMachineCard(machine) {
+            const card = document.createElement('div');
+            card.className = `machine-card status-${machine.status === '사용 가능' ? 'available' : 
+                             machine.status === '사용 중' ? 'in-use' : 'completed'}`;
+            
+            let statusHtml = '';
+            if (machine.status === '사용 중') {
+                statusHtml = `
+                    <div class="machine-user">👤 ${machine.user_name}</div>
+                    <div class="machine-time">⏱️ 남은 시간: ${machine.remaining_minutes}분</div>
+                `;
+            } else if (machine.status === '완료') {
+                statusHtml = `
+                    <div class="machine-user">👤 ${machine.user_name}</div>
+                    <div class="machine-time">✅ 세탁 완료!</div>
+                    ${currentUserName === machine.user_name ? 
+                        `<button onclick="completeWashing(${machine.machine_id})" class="btn-complete">옷 가져가기</button>` : 
+                        ''}
+                `;
+            } else {
+                statusHtml = '<div class="machine-status">사용 가능</div>';
+            }
+
+            card.innerHTML = `
+                <div class="machine-header">
+                    <h3>세탁기 ${machine.machine_id}번</h3>
+                    <span class="status-badge">${machine.status}</span>
+                </div>
+                ${statusHtml}
+            `;
+            
+            return card;
+        }
+
+        // 세탁 시작
+        async function startWashing() {
+            if (!currentUserName) {
+                showMessage('먼저 사용자 이름을 입력해주세요.', 'error');
+                return;
+            }
+
+            const duration = parseInt(document.getElementById('duration').value);
+            if (duration < 1 || duration > 120) {
+                showMessage('세탁 시간은 1분 이상 120분 이하여야 합니다.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_name: currentUserName,
+                        duration_minutes: duration
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    loadStatus();
+                    if (data.is_reservation) {
+                        // 예약이면 주기적으로 상태 확인
+                        setTimeout(loadStatus, 5000);
+                    }
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('오류가 발생했습니다: ' + error.message, 'error');
+            }
+        }
+
+        // 세탁 완료 및 옷 가져가기
+        async function completeWashing(machineId) {
+            if (!currentUserName) {
+                showMessage('먼저 사용자 이름을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        machine_id: machineId,
+                        user_name: currentUserName
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    loadStatus();
+                    loadNotifications();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('오류가 발생했습니다: ' + error.message, 'error');
+            }
+        }
+
+        // 알림 로드
+        async function loadNotifications() {
+            if (!currentUserName) return;
+
+            try {
+                const response = await fetch(`/api/notifications?user_name=${encodeURIComponent(currentUserName)}`);
+                const data = await response.json();
+                
+                if (data.success && data.notifications.length > 0) {
+                    document.getElementById('notificationSection').style.display = 'block';
+                    const container = document.getElementById('notifications');
+                    container.innerHTML = '';
+                    data.notifications.forEach(notif => {
+                        const notifDiv = document.createElement('div');
+                        notifDiv.className = 'notification-item';
+                        notifDiv.textContent = notif.message;
+                        container.appendChild(notifDiv);
+                    });
+                } else {
+                    document.getElementById('notificationSection').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('알림 로드 오류:', error);
+            }
+        }
+
+        // 알림 삭제
+        async function clearNotifications() {
+            if (!currentUserName) return;
+
+            try {
+                const response = await fetch('/api/notifications/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_name: currentUserName
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('notificationSection').style.display = 'none';
+                    showMessage('알림이 삭제되었습니다.', 'success');
+                }
+            } catch (error) {
+                showMessage('오류가 발생했습니다: ' + error.message, 'error');
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(message, type = 'info') {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.textContent = message;
+            messageArea.className = `message-area message-${type}`;
+            messageArea.style.display = 'block';
+
+            setTimeout(() => {
+                messageArea.style.display = 'none';
+            }, 5000);
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            loadStatus();
+            // 5초마다 상태 업데이트
+            statusUpdateInterval = setInterval(() => {
+                loadStatus();
+                if (currentUserName) {
+                    loadNotifications();
+                }
+            }, 5000);
+        });
+
+        // 페이지 언로드 시 인터벌 정리
+        window.addEventListener('beforeunload', () => {
+            if (statusUpdateInterval) {
+                clearInterval(statusUpdateInterval);
+            }
+        });
+    </script>
+</body>
+</html>
+
