@@ -1,0 +1,21 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Deployment Notification
+        run: |
+          echo "🚀 코드가 업데이트되었습니다!"
+          echo "Render에서 자동으로 재배포됩니다."
+          echo "배포 상태를 확인하세요: https://render.com"
+

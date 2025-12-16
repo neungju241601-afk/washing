@@ -2,11 +2,38 @@
 
 고등학교 기숙사에서 사용하는 세탁기 예약 및 관리 시스템입니다. 세탁기 이용 시 발생하는 대기 시간 문제와 세탁 완료 후 제때 가져가지 않아 발생하는 시간 지연 문제를 해결하기 위해 개발되었습니다.
 
+## 🚀 빠른 시작
+
+### 🌐 바로 사용하기 (배포된 버전)
+
+**Render에서 배포하기** (추천! 5분 안에 완료):
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/neungju241601-afk/washing)
+
+**Railway에서 배포하기**:
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/neungju241601-afk/washing)
+
+### 💻 로컬에서 실행하기
+
+```bash
+# 저장소 클론
+git clone https://github.com/neungju241601-afk/washing.git
+cd washing
+
+# 패키지 설치
+pip install -r requirements.txt
+
+# 실행
+python app.py
+```
+
+브라우저에서 `http://localhost:5000` 접속
+
 ## 📚 문서 안내
 
 - **초보자를 위한 설명서**: [`간단한_설명서.md`](간단한_설명서.md) - 초등학생도 이해할 수 있는 쉬운 설명
 - **GitHub 업로드 가이드**: [`GITHUB_업로드_가이드.md`](GITHUB_업로드_가이드.md) - GitHub에 올리는 방법
 - **배포 가이드**: [`DEPLOYMENT.md`](DEPLOYMENT.md) - 무료 호스팅으로 배포하는 방법
+- **자동 배포 가이드**: [`배포_자동화_가이드.md`](배포_자동화_가이드.md) - Render 배포 단계별 가이드
 
 ## 📋 목차
 
