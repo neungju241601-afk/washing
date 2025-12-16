@@ -1,0 +1,25 @@
+# fly.toml 파일은 flyctl launch 명령어로 자동 생성됩니다
+# 이 파일은 참고용입니다
+
+app = "washing-machine"
+primary_region = "icn"  # 서울 (ICN)
+
+[build]
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+
+[env]
+  FLASK_DEBUG = "False"
+  PORT = "5000"
+
