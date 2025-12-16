@@ -18,14 +18,17 @@
     }
   },
 
-  "postCreateCommand": "pip install -r requirements.txt",
+  "postCreateCommand": "bash .codespaces/setup.sh",
   
   "forwardPorts": [5000],
   "portsAttributes": {
     "5000": {
-      "label": "Flask App",
-      "onAutoForward": "notify"
+      "label": "Flask App - 세탁기 예약 시스템",
+      "onAutoForward": "notify",
+      "protocol": "http"
     }
-  }
+  },
+  
+  "postStartCommand": "echo '✅ Codespace 준비 완료! 터미널에서 python app.py를 실행하세요.'"
 }
 

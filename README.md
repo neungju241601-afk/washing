@@ -2,11 +2,20 @@
 
 고등학교 기숙사에서 사용하는 세탁기 예약 및 관리 시스템입니다. 세탁기 이용 시 발생하는 대기 시간 문제와 세탁 완료 후 제때 가져가지 않아 발생하는 시간 지연 문제를 해결하기 위해 개발되었습니다.
 
-## 🚀 빠른 시작
+## 🚀 바로 실행하기
 
-### 🌐 바로 사용하기 (배포된 버전)
+### ⚡ GitHub에서 바로 실행 (추천!)
 
-**Render에서 배포하기** (추천! 5분 안에 완료):
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/neungju241601-afk/washing)
+
+**위 버튼을 클릭하면 GitHub에서 바로 실행됩니다!**
+- 설치 불필요
+- 브라우저에서 바로 사용
+- 자동으로 설정됨
+
+### 🌐 배포하기 (공개 URL 만들기)
+
+**Render에서 배포하기** (5분 안에 완료):
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/neungju241601-afk/washing)
 
 **Railway에서 배포하기**:
